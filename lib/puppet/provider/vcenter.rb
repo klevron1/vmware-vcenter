@@ -30,6 +30,24 @@ class Puppet::Provider::Vcenter <  Puppet::Provider
     @transport.vim
   end
 
+  def rest
+    unless resource[:transport]
+      raise Puppet::Error, "No transport metaparameter provided for #{resource.ref}"
+    end
+    unless resource[:transport].is_a?(Puppet::Resource)
+      raise Puppet::Error, "Invalid transport #{resource[:transport]} provided for #{resource.ref}"
+    end
+    unless resource[:transport].type == "Transport"
+      raise Puppet::Error, "Transport metaparameter must be of type Transport for #{resource.ref}"
+    end
+    unless resource.catalog.resource_refs.include?(resource[:transport].to_s)
+      raise Puppet::Error, "Transport #{resource[:transport].to_s} not defined for #{resource.ref}"
+    end
+
+    @transport ||= PuppetX::Puppetlabs::Transport.retrieve(:resource_ref => resource[:transport], :catalog => resource.catalog, :provider => 'vsphere')
+    @transport.rest
+  end
+
   def rootfolder
     @rootfolder ||= vim.serviceInstance.content.rootFolder
   end
@@ -126,4 +144,42 @@ class Puppet::Provider::Vcenter <  Puppet::Provider
   def basename(path=resource[:path])
     Pathname.new(path).basename.to_s
   end
+
+  [:get, :delete].each do |m|
+    define_method(m) do |url|
+      begin
+        response = rest[url].send(
+          m,
+          { :accept => "application/json",
+            :cookies => @transport.cookies,
+          }
+        )
+        result = JSON.parse(response, symbolize_names: true) unless response.empty?
+
+      rescue RestClient::Exception => e
+        raise Puppet::Error, "\n#{e.exception}:\n#{e.response}"
+      end
+      Puppet.debug "vCenter REST API #{m} #{url} result:\n#{result.inspect}"
+      result
+    end
+  end
+
+  [:put, :post].each do |m|
+    define_method(m) do |url, data|
+      begin
+        response = rest[url].send(
+          m,
+          data.to_json,
+          :accept => "application/json",
+          :cookies => @transport.cookies,
+          :content_type => "application/json"
+        )
+        result = JSON.parse(response, symbolize_names: true) unless response.empty?
+
+      rescue RestClient::Exception => e
+        raise Puppet::Error, "\n#{e.exception}:\n#{e.response}\n"
+      end
+    end
+  end
+
 end
