@@ -14,6 +14,7 @@ module PuppetX::Puppetlabs::Transport
       @options[:user]     = opts[:username]
       @options[:password] = opts[:password]
       @options[:read_timeout] = opts[:read_timeout] || 600 # Default timeout to 10 minutes
+      @options[:open_timeout] = opts[:open_timeout] || 60 # Default timeout to 1 minutes
       Puppet.debug("#{self.class} initializing connection to: #{@options[:host]}")
     end
 
