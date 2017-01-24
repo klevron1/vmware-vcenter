@@ -247,6 +247,40 @@ module PuppetX::VMware::Mapper
           },
 
           # from base class DVSPortSetting
+          :filterPolicy => {
+            Node => NodeData[
+              :node_type => 'DvsFilterPolicy',
+            ],
+            :inherited => LeafData[
+              :misc => [InheritablePolicyInherited],
+              :prop_name => PROP_NAME_IS_FULL_PATH,
+              :desc => "Is setting inherited? true or false",
+              :valid_enum => [:true, :false],
+            ],
+            :filterConfig => {
+              Node => NodeData[
+                :node_type => 'DvsTrafficFilterConfig',
+              ],
+              :inherited => LeafData[
+                :misc => [InheritablePolicyInherited],
+                :prop_name => PROP_NAME_IS_FULL_PATH,
+                :desc => "Is setting inherited? true or false",
+                :valid_enum => [:true, :false],
+                :requires => [
+                  :default_port_config_filter_policy_inherited,
+                ],
+              ],
+              :agentName => LeafData[
+                :prop_name => PROP_NAME_IS_FULL_PATH,
+                :desc => "The name of the network traffic filter agent.",
+              ],
+              :key => LeafData[
+                :prop_name => PROP_NAME_IS_FULL_PATH,
+                :desc => "The key of Network Filter Config.",
+              ],
+            },
+          }
+          # from base class DVSPortSetting
           # vendorSpecificConfig XXX unused
 
           # from base class DVSPortSetting
